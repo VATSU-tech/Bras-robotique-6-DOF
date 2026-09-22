@@ -38,7 +38,7 @@ void loop() {
   else if(valeur < 0) valeur = 0;
 
 
-  if((present_time - previous_time)>= 20){
+  if((present_time - previous_time)>= 10){
       if(val >= 75) valeur ++;
       else if(val <= 25) valeur --;
     previous_time = present_time;
