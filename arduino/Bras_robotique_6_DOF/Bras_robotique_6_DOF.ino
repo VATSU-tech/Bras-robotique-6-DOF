@@ -15,10 +15,9 @@
     unsigned long present_time = 0;
     unsigned long previous_time = 0;
     
-    // Variables pour mémoriser l'état précédent des boutons (détection de clic)
-    int lastBtnState = LOW;
-    int lastBtn2State = LOW;
-    unsigned long lastDebounceTime = 0;
+    int btnState = false;
+    int btnState2 = false;
+    unsigned long previous_time_btn = 0;
     
     void setup() {
       Serial.begin(115200);
@@ -32,7 +31,6 @@
       servo5.attach(servos[4]);
       servo6.attach(servos[5]);
     
-      // Initialisation des servos à 90°
       servo1.write(valeur[1]);
       servo2.write(valeur[2]);
       servo3.write(valeur[3]);
@@ -46,46 +44,31 @@
     void loop() {
       present_time = millis();
     
-      // 1. Contrôle par Joystick (incrément / décrément continu)
       val = analogRead(potpin);
       val = map(val, 0, 1023, 0, 100);
     
-
-Resume with -c (or command below):
-agy --conversation=618d363c-f2e8-4d36-a0b4-25e34321b688
-
-      if ((present_time - previous_time) >= 10) {
-        if (val >= 75 && valeur[0] < 180) {
-          valeur[0]++;
-        } else if (val <= 25 && valeur[0] > 0) {
-          valeur[0]--;
-        }
+      if ((present_time - previous_time) >= 20) {
+        if (val >= 75 && valeur[0] < 180) valeur[0]++;
+        else if (val <= 25 && valeur[0] > 0) valeur[0]--;
         previous_time = present_time;
       }
 
-      // 2. Détection précise des clics sur les boutons (avec résistances pull-down)
-      int readingBtn = digitalRead(btn);
-      int readingBtn2 = digitalRead(btn2);
-
-      if ((present_time - lastDebounceTime) >= 150) {
+      if ((present_time - previous_time_btn) >= 150) {
         bool changed = false;
 
-        // Détection d'un appui sur btn (servo suivant)
-        if (readingBtn == HIGH && lastBtnState == LOW) {
+        if (digitalRead(btn) == HIGH && btnState == LOW) {
           i++;
           if (i > 6) i = 1;
           changed = true;
-          lastDebounceTime = present_time;
+          previous_time_btn = present_time;
         }
-        // Détection d'un appui sur btn2 (servo précédent)
-        else if (readingBtn2 == HIGH && lastBtn2State == LOW) {
+        else if (digitalRead(btn2) == HIGH && btnState2 == LOW) {
           i--;
           if (i < 1) i = 6;
           changed = true;
-          lastDebounceTime = present_time;
+          previous_time_btn = present_time;
         }
 
-        // Si on a changé de servo, on recharge sa position actuelle
         if (changed) {
           valeur[0] = valeur[i];
           Serial.print("Servo actif : ");
@@ -93,10 +76,9 @@ agy --conversation=618d363c-f2e8-4d36-a0b4-25e34321b688
         }
       }
 
-      lastBtnState = readingBtn;
-      lastBtn2State = readingBtn2;
+      btnState = digitalRead(btn);
+      btnState2 = digitalRead(btn2);
 
-      // 3. Mise à jour de la position du servo actif
       valeur[i] = valeur[0];
 
       switch (i) {
