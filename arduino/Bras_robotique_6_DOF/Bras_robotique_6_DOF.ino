@@ -1,63 +1,110 @@
-/*
- Controlling a servo position using a potentiometer (variable resistor)
- by Michal Rinott <http://people.interaction-ivrea.it/m.rinott>
-
- modified on 8 Nov 2013
- by Scott Fitzgerald
- http://www.arduino.cc/en/Tutorial/Knob
-*/
-
 #include <Servo.h>
+    
+    Servo servo1, servo2, servo3, servo4, servo5, servo6;
+    
+    #define btn 2
+    #define btn2 4
+    
+    int i = 1;
+    int servos[] = { 3, 5, 6, 9, 10, 11 };
+    
+    int potpin = A0;  // Axe du joystick
+    int val;
+    int valeur[7] = { 90, 90, 90, 90, 90, 90, 90 };
+    
+    unsigned long present_time = 0;
+    unsigned long previous_time = 0;
+    
+    // Variables pour mémoriser l'état précédent des boutons (détection de clic)
+    int lastBtnState = LOW;
+    int lastBtn2State = LOW;
+    unsigned long lastDebounceTime = 0;
+    
+    void setup() {
+      Serial.begin(115200);
+      pinMode(btn, INPUT);
+      pinMode(btn2, INPUT);
+    
+      servo1.attach(servos[0]);
+      servo2.attach(servos[1]);
+      servo3.attach(servos[2]);
+      servo4.attach(servos[3]);
+      servo5.attach(servos[4]);
+      servo6.attach(servos[5]);
+    
+      // Initialisation des servos à 90°
+      servo1.write(valeur[1]);
+      servo2.write(valeur[2]);
+      servo3.write(valeur[3]);
+      servo4.write(valeur[4]);
+      servo5.write(valeur[5]);
+      servo6.write(valeur[6]);
+    
+      valeur[0] = valeur[i];
+    }
+    
+    void loop() {
+      present_time = millis();
+    
+      // 1. Contrôle par Joystick (incrément / décrément continu)
+      val = analogRead(potpin);
+      val = map(val, 0, 1023, 0, 100);
+    
 
-Servo myservo;  // create Servo object to control a servo
-#define btn 2
-#define btn2 4
-int i= 0;
-bool activate = false;
+Resume with -c (or command below):
+agy --conversation=618d363c-f2e8-4d36-a0b4-25e34321b688
 
-int servos[] = {3,5,6,9,10,11};
+      if ((present_time - previous_time) >= 10) {
+        if (val >= 75 && valeur[0] < 180) {
+          valeur[0]++;
+        } else if (val <= 25 && valeur[0] > 0) {
+          valeur[0]--;
+        }
+        previous_time = present_time;
+      }
 
-int potpin = A0;  // analog pin used to connect the potentiometer
-int val;    // variable to read the value from the analog pin
-int valeur = 90;
-unsigned long present_time = 0;
-unsigned long previous_time =0;
+      // 2. Détection précise des clics sur les boutons (avec résistances pull-down)
+      int readingBtn = digitalRead(btn);
+      int readingBtn2 = digitalRead(btn2);
 
-void setup() {
-  Serial.begin(115200);
-  pinMode(btn, INPUT);
-  pinMode(btn2, INPUT);
-  myservo.attach(servos[0]);  // attaches the servo on pin 9 to the Servo object
-}
+      if ((present_time - lastDebounceTime) >= 150) {
+        bool changed = false;
 
-void loop() {
-  present_time = millis();
-  val = analogRead(potpin);            // reads the value of the potentiometer (value between 0 and 1023)
-  val = map(val, 0, 1023, 0, 100);     // scale it for use with the servo (value between 0 and 180)
-  if(valeur > 180) valeur = 180;
-  else if(valeur < 0) valeur = 0;
+        // Détection d'un appui sur btn (servo suivant)
+        if (readingBtn == HIGH && lastBtnState == LOW) {
+          i++;
+          if (i > 6) i = 1;
+          changed = true;
+          lastDebounceTime = present_time;
+        }
+        // Détection d'un appui sur btn2 (servo précédent)
+        else if (readingBtn2 == HIGH && lastBtn2State == LOW) {
+          i--;
+          if (i < 1) i = 6;
+          changed = true;
+          lastDebounceTime = present_time;
+        }
 
+        // Si on a changé de servo, on recharge sa position actuelle
+        if (changed) {
+          valeur[0] = valeur[i];
+          Serial.print("Servo actif : ");
+          Serial.println(i);
+        }
+      }
 
-  if((present_time - previous_time)>= 10){
-      if(val >= 75) valeur ++;
-      else if(val <= 25) valeur --;
-    previous_time = present_time;
-  }
+      lastBtnState = readingBtn;
+      lastBtn2State = readingBtn2;
 
-  if(activate){
-    if(i>=6 || i < 0)i=0;
-    myservo.detach();
-    myservo.attach(servos[i]);
-    activate = false;
-  }
-  if(digitalRead(btn))i++;
-  if(digitalRead(btn2))i--;
-  if(digitalRead(btn) || digitalRead(btn2)){
-    activate = true;
-    delay(250);
-  }
-  Serial.println(i);
+      // 3. Mise à jour de la position du servo actif
+      valeur[i] = valeur[0];
 
-  myservo.write(valeur);                  // sets the servo position according to the scaled value
-  // delay(15);                           // waits for the servo to get there
-}
+      switch (i) {
+        case 1: servo1.write(valeur[1]); break;
+        case 2: servo2.write(valeur[2]); break;
+        case 3: servo3.write(valeur[3]); break;
+        case 4: servo4.write(valeur[4]); break;
+        case 5: servo5.write(valeur[5]); break;
+        case 6: servo6.write(valeur[6]); break;
+      }
+    }
