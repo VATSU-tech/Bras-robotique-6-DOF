@@ -1,6 +1,6 @@
 #include <Servo.h>
     
-    Servo servo1, servo2, servo3, servo4, servo5;
+    Servo servo[5];
     
     #define btn 2
     #define btn2 4
@@ -24,18 +24,11 @@
       Serial.begin(115200);
       pinMode(btn, INPUT);
       pinMode(btn2, INPUT);
-    
-      servo1.attach(servos[0]);
-      servo2.attach(servos[1]);
-      servo3.attach(servos[2]);
-      servo4.attach(servos[3]);
-      servo5.attach(servos[4]);
-    
-      servo1.write(valeur[1]);
-      servo2.write(valeur[2]);
-      servo3.write(valeur[3]);
-      servo4.write(valeur[4]);
-      servo5.write(valeur[5]);
+
+      for(int i= 0; i < 5; i++){
+        servo[i].attach(servos[i]);
+        servo[i].write(valeur[i+1]);
+      }
     
       valeur[0] = valeur[i];
     }
@@ -88,11 +81,5 @@
       Serial.print(" ");
       Serial.println(valeur[i]);
 
-      switch (i) {
-        case 1: servo1.write(valeur[i]); break;
-        case 2: servo2.write(valeur[i]); break;
-        case 3: servo3.write(valeur[i]); break;
-        case 4: servo4.write(valeur[i]); break;
-        case 5: servo5.write(valeur[i]); break;
-      }
+      servo[i-1].write(valeur[i]);
     }
