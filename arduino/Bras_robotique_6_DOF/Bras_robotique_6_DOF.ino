@@ -12,7 +12,7 @@
     int joyValX;
     int joyValY;
     int time;
-    int valeur[] = { 90, 90, 90, 90, 90, 90, 90};
+    int valeur[] = { 0, 90, 60, 45, 135, 0, 90};
     
     unsigned long present_time = 0;
     unsigned long previous_time = 0;
